@@ -40,10 +40,10 @@ labelled mock provider.
 
 ## The turn-aware model
 
-| Turn | What Caucus does (v1.0) | What Caucus does (v1.1) |
-|------|-------------------------|-------------------------|
-| **Plan / reasoning** | panel of models → judge → one synthesized answer | (same) |
-| **Action** (tool calls, edits) | pass through to one primary model (streams) | generate N candidates, run them in an isolated sandbox against your repo's tests, ship the survivor |
+| Turn | What Caucus does |
+|------|------------------|
+| **Plan / reasoning** | panel of models → judge → one synthesized answer |
+| **Action** (tool calls, edits) | with a sandbox + your repo's tests: generate N candidates, run each, ship the survivor — otherwise pass through to one primary model (streams) |
 
 Synth only spends at the decision points; the bulk of an agent loop (continuations) passes
 through and streams normally.
@@ -64,19 +64,19 @@ It's an experiment, not a leaderboard — see the caveats in [benchmark/](benchm
 
 ## Where this helps — and where it doesn't yet
 
-Being honest about the v1.0 shape:
+Being honest about where it is today:
 
 - **The plan/action split is a heuristic.** `classify()` is a regex cascade over the latest turn —
   enough to route the obvious cases, but it can't read intent (a "let me rethink why the test
-  failed" continuation looks like an action turn). A learned classifier is the roadmap; treat v1.0
+  failed" continuation looks like an action turn). A learned classifier is the roadmap; treat today's
   routing as a useful approximation, not a guarantee.
 - **The text-judge synth helps reasoning more than code — and measurably *hurts* code.** A panel +
   judge pays off on open-ended turns (design, trade-offs) where models genuinely differ. For *code*,
   the judge reads candidates without running them, so it can't tell which is correct — in our
   [benchmark](benchmark/) it scored **27%** on hard tasks vs **60%** for a single shot, rewriting
   working solutions into broken ones. And when a turn is a tool call, synth is bypassed entirely (you
-  can't synthesize a tool call). For code, the **v1.1 sandbox-and-test path below is the real
-  mechanism**: the test suite is the judge.
+  can't synthesize a tool call). For code, the **sandbox-and-test path below is the real mechanism**:
+  the test suite is the judge.
 - **Best-of-N samples one model N times** (temperature varies the output, not the approach), and a
   combo's judge may also be one of its panel members (it critiques its own answer). Both are
   deliberate — just know that the "diversity" here is sampling diversity, not different models.
@@ -116,7 +116,7 @@ the configured model, key fingerprints, the keystore backend, and engine + daemo
 - **The console is served in-process, same-origin**, under a strict CSP. It is not a hosted
   page reaching into localhost.
 
-## v1.1 — sandbox-and-test (preview)
+## Sandbox-and-test
 
 Action turns fan out to N candidates from the combo's primary model (sampled N times), each
 applied in an **ephemeral, network-isolated copy** of your workspace with resource caps; your
@@ -139,10 +139,9 @@ Caucus is one self-contained Python process. The mixture-of-agents / best-of-N s
 **Caucus's own engine** (`src/caucus/synth_engine.py`, identity `caucus-synth`) — a native,
 tool-aware panel-and-judge that fans the panel out in parallel and never flattens tool calls to
 text. [LiteLLM](https://github.com/BerriAI/litellm) handles multi-provider routing and the
-in-process **Anthropic + OpenAI + Responses** front doors. The result is a clean install
-(~186 MB, no ML stack) with no second runtime and no sidecar — the moat is the turn-aware
-assembly and the repo-aware action selection, not a borrowed engine.
+in-process **Anthropic + OpenAI + Responses** front doors. The result is a lean install (no ML
+stack — no torch/transformers) with no second runtime and no sidecar — the value is the repo-aware
+sandbox-and-test selection and turn-aware routing, not a borrowed engine.
 
-See [`CAUCUS-VISION-AND-ROADMAP.md`](CAUCUS-VISION-AND-ROADMAP.md) for the vision and positioning,
-[GETTING-STARTED.md](GETTING-STARTED.md) for setup, and [WALKTHROUGH.md](WALKTHROUGH.md) for the
+See [GETTING-STARTED.md](GETTING-STARTED.md) for setup and [WALKTHROUGH.md](WALKTHROUGH.md) for the
 console tour.
