@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caucus — Sandbox-and-Test Benchmark</title>
+<style>
+  :root{--bg:#0c1018;--panel:#151c2b;--line:#26314a;--ink:#e9eef8;--dim:#9db0d0;--acc:#6ea8ff;
+        --hero:#39d98a;--bad:#ff6b6b;--warn:#ffb454;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:36px 22px 90px}
+  h1{font-size:27px;margin:0 0 2px;letter-spacing:-.4px}
+  .sub{color:var(--dim);margin:0 0 22px}
+  h2{font-size:18px;margin:34px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .verdict{background:linear-gradient(180deg,#13241c,#10301f);border:1px solid #1f6b48;border-radius:14px;
+           padding:16px 18px;margin:0 0 26px;font-size:14.5px}
+  .verdict b{color:#bdf0d4}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h3{margin:0 0 4px;font-size:14px}
+  .card .cap{color:var(--dim);font-size:12px;margin:0 0 14px}
+  .bar{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .blab{width:78px;font-size:12px;color:var(--dim);text-align:right;flex:none}
+  .btrack{position:relative;flex:1;background:#0d1422;border-radius:6px;height:22px;overflow:hidden}
+  .bfill{height:100%;border-radius:6px}
+  .bfill.hero{background:var(--hero)} .bfill.norm{background:var(--acc)} .bfill.bad{background:var(--bad)}
+  .bpct{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11.5px;font-weight:700;color:#0c1018}
+  .big{font-size:40px;font-weight:800;letter-spacing:-1px}
+  .big.hero{color:var(--hero)} .big.bad{color:var(--bad)}
+  .kpis{display:flex;gap:22px;flex-wrap:wrap;margin:6px 0 0}
+  .kpi{flex:1;min-width:120px} .kpi .l{color:var(--dim);font-size:12px}
+  p{color:#c7d3e8;font-size:14px} p.note{color:#8a9bbd;font-size:13px}
+  ul{font-size:14px;color:#c7d3e8} li{margin:3px 0}
+  code{color:#bcd;background:#0d1422;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .red{color:var(--bad)}
+  table.tt{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px}
+  table.tt th,table.tt td{border:1px solid var(--line);padding:4px 7px;text-align:center}
+  table.tt th{background:#0d1422;color:var(--dim);font-weight:600}
+  table.tt td.tn{text-align:left;color:var(--ink)}
+  table.tt td.good{color:#7fe0aa} table.tt td.zero{color:var(--bad)} table.tt td.part{color:var(--warn)}
+  .pill{display:inline-block;background:#0d1422;border:1px solid var(--line);border-radius:20px;
+        padding:2px 10px;font-size:12px;color:var(--dim);margin:2px 4px 2px 0}
+  .ok{color:var(--hero)}
+  footer{color:#6c7a96;font-size:12px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+</style></head><body><div class="wrap">
+  <h1>Caucus — Sandbox-and-Test Benchmark</h1>
+  <p class="sub">Does running candidates against tests and keeping a passer actually beat a single shot — and is the text-judge synth worth it on code? Every solution scored inside Caucus's real seatbelt sandbox.</p>
+
+  <div class="verdict"><b>Lead with sandbox-and-test.</b> On the hard tasks it lifts a <i>cheap</i> model from <b>60%</b> (one shot) to <b>97%</b> (five verified tries), while one <i>expensive</i> unverified shot managed only <b>53%</b>. The text-judge synth <b class='red'>cratered to 27%</b> — it rewrites working code it never runs, which is exactly why Caucus routes code to the sandbox, not the judge. The shipped <code>select_survivor</code> matched ground truth on <b>84/84</b> trials.</div>
+
+  <h2>The core result — where it counts</h2>
+  <p>On the <b>hard set</b> (6 fiddly parser tasks × K=5, chosen because a single shot is unreliable on them):</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Hard tasks — pass rate by selector</h3>
+      <p class="cap">same identical candidates; only the selection mechanism differs</p>
+      <div class="bar"><div class="blab">flash@1</div><div class="btrack"><div class="bfill norm" style="width:60%"></div><span class="bpct">60%</span></div></div>
+<div class="bar"><div class="blab">pro@1</div><div class="btrack"><div class="bfill norm" style="width:53%"></div><span class="bpct">53%</span></div></div>
+<div class="bar"><div class="blab">synth@3</div><div class="btrack"><div class="bfill bad" style="width:27%"></div><span class="bpct">27%</span></div></div>
+<div class="bar"><div class="blab">runtest@2</div><div class="btrack"><div class="bfill norm" style="width:73%"></div><span class="bpct">73%</span></div></div>
+<div class="bar"><div class="blab">runtest@3</div><div class="btrack"><div class="bfill norm" style="width:87%"></div><span class="bpct">87%</span></div></div>
+<div class="bar"><div class="blab">runtest@5</div><div class="btrack"><div class="bfill hero" style="width:97%"></div><span class="bpct">97%</span></div></div>
+    </div>
+    <div class="card">
+      <h3>The gap</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="big hero">97%</div><div class="l">runtest@5 — cheap, <b>verified</b></div></div>
+        <div class="kpi"><div class="big">53%</div><div class="l">pro@1 — expensive, unverified</div></div>
+      </div>
+      <p style="margin-top:14px">Run-and-test lifts a cheap model from <b>60%</b> (one shot) → <b>73%</b> (N=2) → <b>87%</b> (N=3) → <b class="ok">97%</b> (N=5). The <i>expensive</i> single model only managed <b>53%</b>. A handful of cheap tries you can verify beat one costly try you can't.</p>
+    </div>
+  </div>
+
+  <h2>It never hurts — and validates the real code path</h2>
+  <p>On the <b>broad set</b> (18 tasks × K=3, mostly within a strong model's reach), run-and-test ties or beats the single shot on <i>every</i> task — the aggregate gap is small only because the ceiling is high:</p>
+  <div class="card"><h3>Broad set — overall pass rate</h3><div class="bar"><div class="blab">flash@1</div><div class="btrack"><div class="bfill norm" style="width:91%"></div><span class="bpct">91%</span></div></div>
+<div class="bar"><div class="blab">pro@1</div><div class="btrack"><div class="bfill norm" style="width:89%"></div><span class="bpct">89%</span></div></div>
+<div class="bar"><div class="blab">synth@3</div><div class="btrack"><div class="bfill bad" style="width:54%"></div><span class="bpct">54%</span></div></div>
+<div class="bar"><div class="blab">runtest@2</div><div class="btrack"><div class="bfill norm" style="width:93%"></div><span class="bpct">93%</span></div></div>
+<div class="bar"><div class="blab">runtest@3</div><div class="btrack"><div class="bfill hero" style="width:94%"></div><span class="bpct">94%</span></div></div>
+<div class="bar"><div class="blab">runtest@5</div><div class="btrack"><div class="bfill norm" style="width:94%"></div><span class="bpct">94%</span></div></div></div>
+  <p style="margin-top:12px"><span class="pill ok">✓ select_survivor agreed with ground-truth pass@N on 84/84 trials</span> The benchmark drives the <i>shipped</i> <code>selection.py</code> + <code>sandbox.py</code>, not a proxy — the survivor it picks is the one that actually passes.</p>
+
+  <h2>The text-judge synth <span class="red">hurts</span> on code</h2>
+  <p>Given the same candidates, a judge that <b>reads</b> them and writes "the best" solution (never running it) scored <b class="red">54%</b> on the broad set — far below the <b>91%</b> single shot. It rewrites working code into broken code:</p>
+  <ul><li><code>regex_match</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>0/3</b></li><li><code>multiply_strings</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>0/3</b></li><li><code>decode_ways</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>0/3</b></li><li><code>three_sum_count</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>0/3</b></li><li><code>min_window</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>1/3</b></li><li><code>wildcard_match</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>1/3</b></li><li><code>trap</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>2/3</b></li><li><code>largest_rectangle</code> — flash@1 <b>3/3</b> → synth@3 <b class='red'>2/3</b></li></ul>
+  <p class="note">This is <i>why</i> Caucus routes code/action turns to sandbox-and-test, not synth — and why the README says the text-judge synth helps open-ended reasoning, not code. The benchmark turns that caveat into a measured fact.</p>
+
+  <h2>How many candidates? N=3 is the sweet spot</h2>
+  <p>More candidates help — with diminishing returns. On the broad set 2→3 buys the gain; 3→5 adds little:</p>
+  <div class="card"><h3>Broad set — runtest@N</h3><div class="bar"><div class="blab">runtest@2</div><div class="btrack"><div class="bfill norm" style="width:93%"></div><span class="bpct">93%</span></div></div>
+<div class="bar"><div class="blab">runtest@3</div><div class="btrack"><div class="bfill hero" style="width:94%"></div><span class="bpct">94%</span></div></div>
+<div class="bar"><div class="blab">runtest@5</div><div class="btrack"><div class="bfill norm" style="width:94%"></div><span class="bpct">94%</span></div></div></div>
+
+  <h2>Per-task detail</h2>
+  <p class="note">Hard set:</p><table class='tt'><tr><th>task</th><th>flash@1</th><th>pro@1</th><th>synth@3</th><th>runtest@2</th><th>runtest@3</th><th>runtest@5</th></tr><tr><td class='tn'>calculate</td><td class="part">3/5</td><td class="part">2/5</td><td class="part">1/5</td><td class="part">4/5</td><td class="part">4/5</td><td class="good">5/5</td></tr><tr><td class='tn'>valid_number</td><td class="part">4/5</td><td class="part">3/5</td><td class="part">1/5</td><td class="good">5/5</td><td class="good">5/5</td><td class="good">5/5</td></tr><tr><td class='tn'>word_break</td><td class="part">1/5</td><td class="zero">0/5</td><td class="zero">0/5</td><td class="part">1/5</td><td class="part">4/5</td><td class="good">5/5</td></tr><tr><td class='tn'>fraction_to_decimal</td><td class="good">5/5</td><td class="good">5/5</td><td class="zero">0/5</td><td class="good">5/5</td><td class="good">5/5</td><td class="good">5/5</td></tr><tr><td class='tn'>decode_string</td><td class="part">4/5</td><td class="good">5/5</td><td class="good">5/5</td><td class="good">5/5</td><td class="good">5/5</td><td class="good">5/5</td></tr><tr><td class='tn'>basic_calculator_iii</td><td class="part">1/5</td><td class="part">1/5</td><td class="part">1/5</td><td class="part">2/5</td><td class="part">3/5</td><td class="part">4/5</td></tr></table>
+  <p class="note" style="margin-top:14px">Broad set:</p><table class='tt'><tr><th>task</th><th>flash@1</th><th>pro@1</th><th>synth@3</th><th>runtest@2</th><th>runtest@3</th><th>runtest@5</th></tr><tr><td class='tn'>regex_match</td><td class="good">3/3</td><td class="good">3/3</td><td class="zero">0/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>valid_number</td><td class="part">2/3</td><td class="good">3/3</td><td class="part">2/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>calculate</td><td class="zero">0/3</td><td class="zero">0/3</td><td class="part">1/3</td><td class="zero">0/3</td><td class="part">1/3</td><td class="part">1/3</td></tr><tr><td class='tn'>multiply_strings</td><td class="good">3/3</td><td class="good">3/3</td><td class="zero">0/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>decode_ways</td><td class="good">3/3</td><td class="good">3/3</td><td class="zero">0/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>trap</td><td class="good">3/3</td><td class="good">3/3</td><td class="part">2/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>largest_rectangle</td><td class="good">3/3</td><td class="good">3/3</td><td class="part">2/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>min_window</td><td class="good">3/3</td><td class="good">3/3</td><td class="part">1/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>next_permutation</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>jump_game_min</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>atoi</td><td class="good">3/3</td><td class="good">3/3</td><td class="part">2/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>wildcard_match</td><td class="good">3/3</td><td class="good">3/3</td><td class="part">1/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>edit_distance</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>longest_valid_parens</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>three_sum_count</td><td class="good">3/3</td><td class="good">3/3</td><td class="zero">0/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>word_break</td><td class="part">2/3</td><td class="zero">0/3</td><td class="zero">0/3</td><td class="part">2/3</td><td class="part">2/3</td><td class="part">2/3</td></tr><tr><td class='tn'>coin_change</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr><tr><td class='tn'>add_binary</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td><td class="good">3/3</td></tr></table>
+
+  <h2>Method &amp; honest caveats</h2>
+  <ul>
+    <li>Per task/trial: generate 5 cheap candidates once; every selector acts on the same candidates (isolates the <i>mechanism</i>, not the model). cheap = <code>deepseek/deepseek-v4-flash</code>, strong = <code>deepseek/deepseek-v4-pro</code>.</li>
+    <li><b>runtest@N</b> = run candidates in Caucus's real sandbox, keep a passer (network/$HOME denied, ephemeral copy). <b>synth@3</b> = a strong-model judge reads 3 and writes one. <b>pro@1</b> = a single strong generation.</li>
+    <li>Sandbox forced to <b>Seatbelt</b> (host): the default Docker image <code>python:3.12-slim</code> puts python at <code>/usr/local/bin</code>, so a host-path test command can't exec in-container — a real deploy note (set <code>CAUCUS_SANDBOX_IMAGE</code> to your toolchain). The selection logic is backend-agnostic.</li>
+    <li><b>Caveats:</b> tasks are self-contained Python functions with assert oracles, not real repo bug-fixes; cheap-vs-expensive is within one vendor; the broad set is near-ceiling so the hard set (small N) carries the magnitude. Direction is robust; exact percentages move with the task mix. Reproduce: <code>python benchmark/run_benchmark.py --set hard</code>.</li>
+  </ul>
+
+  <footer>Generated from <code>benchmark/results/*.json</code> · broad run 629.6s, hard run 654.9s · all scoring inside Caucus's seatbelt sandbox.</footer>
+</div></body></html>

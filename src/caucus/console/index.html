@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caucus console</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g stroke='%232f6fd6' stroke-width='3.4' stroke-linecap='round' opacity='.34' fill='none'><line x1='32' y1='32' x2='32' y2='13'/><line x1='32' y1='32' x2='15' y2='49'/><line x1='32' y1='32' x2='49' y2='49'/></g><g fill='%232f6fd6'><circle cx='32' cy='13' r='6'/><circle cx='15' cy='49' r='6'/><circle cx='49' cy='49' r='6'/><circle cx='32' cy='32' r='11'/></g></svg>">
+  <link rel="stylesheet" href="/console.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brandmark" aria-hidden="true"><svg viewBox="0 0 64 64" width="22" height="22" fill="currentColor"><g stroke="currentColor" stroke-width="3.4" stroke-linecap="round" opacity=".34" fill="none"><line x1="32" y1="32" x2="32" y2="13"/><line x1="32" y1="32" x2="15" y2="49"/><line x1="32" y1="32" x2="49" y2="49"/></g><circle cx="32" cy="13" r="6"/><circle cx="15" cy="49" r="6"/><circle cx="49" cy="49" r="6"/><circle cx="32" cy="32" r="11"/></svg></span> Caucus <span class="ver" id="ver"></span></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab on" data-view="chat">Chat</button>
+      <button class="tab" data-view="activity">Activity</button>
+      <button class="tab" data-view="logs">Logs</button>
+      <button class="tab" data-view="settings">Settings</button>
+    </nav>
+    <div class="bind" id="bind">127.0.0.1</div>
+    <button class="themetoggle" id="tourbtn" title="Take the tour" aria-label="Take the tour">?</button>
+    <button class="themetoggle" id="themetoggle" title="Toggle light / dark" aria-label="Toggle theme">☾</button>
+  </header>
+
+  <!-- ===================== CHAT ===================== -->
+  <main class="view on" id="view-chat">
+    <aside class="sidebar">
+      <button class="newchat" id="newchat">+ New chat</button>
+      <div class="history" id="history"></div>
+      <div class="sidefoot">Local &amp; sovereign · talking to your<br>own machine, never a server.</div>
+    </aside>
+
+    <section class="chatmain">
+      <div class="combobar">
+        <span class="cbl">Synth with</span>
+        <div class="chips" id="combochips"></div>
+        <span class="comboinfo" id="comboinfo"></span>
+      </div>
+
+      <div class="transcript" id="transcript">
+        <div class="empty" id="chatempty">
+          <h2>Chat with your synth</h2>
+          <p>A panel of models answers and a judge synthesizes them into one — on your machine,
+             with your keys. Pick a combo above and ask anything.</p>
+          <div class="suggest" id="suggest"></div>
+        </div>
+      </div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <textarea id="input" rows="1" placeholder="Message your local synth…  (Enter to send, Shift+Enter for newline)"></textarea>
+        <button type="submit" id="send" aria-label="Send">↑</button>
+      </form>
+      <div class="needkey" id="needkey" hidden></div>
+    </section>
+  </main>
+
+  <!-- ===================== ACTIVITY ===================== -->
+  <main class="view" id="view-activity">
+    <div class="pane">
+      <section class="card">
+        <h2>Live turns <span class="sub">plan → synth · action → pass-through · every turn on your machine</span></h2>
+        <div class="rollup" id="rollup"></div>
+        <div class="stream" id="stream"><p class="muted">No turns yet — chat, or point an agent at <code id="baseurl"></code>.</p></div>
+      </section>
+      <section class="card">
+        <h2>Action selection <span class="sub">v1.1 · candidates → sandbox-and-test → survivor</span></h2>
+        <div id="selections"><p class="muted">No selections yet — needs a <code>sandbox-and-test</code> combo + a workspace.</p></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===================== LOGS ===================== -->
+  <main class="view" id="view-logs">
+    <div class="pane">
+      <section class="card logscard">
+        <h2>Live logs <span class="sub">LiteLLM per-call stream + the MOA pipeline trace — straight from the engine</span></h2>
+        <div class="logbar">
+          <div class="logfilters" id="logfilters">
+            <button class="logf on" data-src="all">all</button>
+            <button class="logf" data-src="litellm">litellm</button>
+            <button class="logf" data-src="synth">synth</button>
+            <button class="logf" data-src="caucus">caucus</button>
+          </div>
+          <input class="logsearch" id="logsearch" type="search" placeholder="filter logs…  (substring or /regex/)" autocomplete="off">
+          <span class="logspacer"></span>
+          <span class="logstate" id="logstate"></span>
+          <button class="logbtn" id="logpause" title="Pause / resume auto-follow">⏸ pause</button>
+          <button class="logbtn" id="logclear" title="Clear the buffer">clear</button>
+        </div>
+        <div class="loghint" id="loghint" hidden></div>
+        <div class="logview" id="logview"><p class="muted">Waiting for activity — chat, or point an agent at the endpoint, and the engine's logs stream here.</p></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <main class="view" id="view-settings">
+    <div class="pane setpane">
+
+      <!-- setup checklist — persistent above the sub-tabs; hides itself once complete -->
+      <section class="setup" id="setup" hidden>
+        <h2>Get set up <span class="sub">three steps to your first synthesized turn</span></h2>
+        <ol class="checklist" id="checklist"></ol>
+      </section>
+
+      <!-- sub-tab nav -->
+      <nav class="subtabs" id="subtabs">
+        <button class="subtab on" type="button" data-sub="providers">Providers</button>
+        <button class="subtab" type="button" data-sub="combos">Combos</button>
+        <button class="subtab" type="button" data-sub="connections">Connections</button>
+      </nav>
+
+      <!-- PROVIDERS -->
+      <section class="subview on" id="sub-providers">
+        <div class="subhead"><h2>Providers</h2>
+          <p class="secsub">Add an API key for each provider your combos use. <b>BYOK</b> — keys are
+            stored locally in <code>~/.config/caucus/.env</code>, sent only to the provider you
+            chose, and only a fingerprint is ever shown back.</p></div>
+        <div id="keys" class="keys"></div>
+        <form id="keyform" class="keyform" autocomplete="off">
+          <select id="kp" class="provselect" aria-label="Provider"></select>
+          <input id="kv" type="password" placeholder="paste API key — stored locally, set once" autocomplete="off">
+          <button type="submit">Save key</button>
+        </form>
+        <div id="keystatus" class="note" role="status" aria-live="polite"></div>
+      </section>
+
+      <!-- COMBOS -->
+      <section class="subview" id="sub-combos">
+        <div class="subhead"><h2>Combos</h2>
+          <p class="secsub">A combo is a <b>panel</b> of models + a <b>judge</b> + a <b>strategy</b>.
+            Plan turns convene the panel and the judge synthesizes one answer; action turns pass
+            through to the primary. Choose the active one, or edit your own.</p></div>
+        <div id="combos" class="combos"></div>
+        <div id="newcomboslot"></div>
+        <button class="ghostbtn" id="newcombo" type="button">+ New combo</button>
+      </section>
+
+      <!-- CONNECTIONS — how agents reach Caucus, + the daemon they reach -->
+      <section class="subview" id="sub-connections">
+        <div class="subhead"><h2>Connect an agent</h2>
+          <p class="secsub">Point any coding agent at Caucus. The agent believes it's talking to one
+            model; Caucus convenes the panel behind the scenes.</p></div>
+        <div class="varianttabs" id="agenttabs"></div>
+        <div class="snippetwrap">
+          <pre class="snippet" id="agentsnippet"></pre>
+          <button class="copybtn" id="agentcopy" type="button">copy</button>
+        </div>
+        <p class="varianthint" id="agenthint"></p>
+
+        <div class="subhead daemonhead"><h2>Daemon</h2>
+          <p class="secsub">The local process you're connecting to — read-only status and the exact
+            commands to change it. Network exposure and the auth token are set at launch, never
+            editable from the browser.</p></div>
+        <div class="tiles" id="daemontiles"></div>
+        <div class="daemoncmds" id="daemoncmds"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===================== FIRST-RUN ONBOARDING ===================== -->
+  <div class="onboard" id="onboard" hidden>
+    <div class="onboardcard">
+      <button class="onboardx" id="onboardx" type="button" aria-label="Close">×</button>
+      <div class="onboardbody" id="onboardbody"></div>
+      <div class="onboardnav" id="onboardnav"></div>
+    </div>
+  </div>
+
+  <script src="/console.js"></script>
+</body>
+</html>

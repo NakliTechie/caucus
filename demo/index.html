@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caucus — the prose half</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g stroke='%232f6fd6' stroke-width='3.4' stroke-linecap='round' opacity='.34' fill='none'><line x1='32' y1='32' x2='32' y2='13'/><line x1='32' y1='32' x2='15' y2='49'/><line x1='32' y1='32' x2='49' y2='49'/></g><g fill='%232f6fd6'><circle cx='32' cy='13' r='6'/><circle cx='15' cy='49' r='6'/><circle cx='49' cy='49' r='6'/><circle cx='32' cy='32' r='11'/></g></svg>">
+<meta name="description" content="Chat with a synth: a panel of models answers, a judge synthesizes them into one. The front door to Caucus, a local sovereign synth proxy for coding agents.">
+<style>
+  :root{
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  }
+  :root,[data-theme="light"]{ /* light: cream bg + blue */
+    --bg:#f4edda;--panel:#fbf7ec;--panel2:#ece2cb;--border:#ddd0b2;--text:#222d3b;
+    --muted:#586472;--faint:#8892a0;--accent:#1f9d6b;--cloud:#2f6fd6;--judge:#4257c4;--warn:#b07d12;
+    --blue:#2f6fd6;--cream:#b78a3d;--err:#cf4a4a;--topbar:rgba(244,237,218,.92);
+  }
+  [data-theme="dark"]{ /* dark: navy bg + cream + blue */
+    --bg:#0e1622;--panel:#161f2e;--panel2:#1d2838;--border:#2a384b;--text:#f2ebd9;
+    --muted:#9db0c6;--faint:#69788c;--accent:#63d0a6;--cloud:#5ea2ff;--judge:#ead9b3;--warn:#e3b54f;
+    --blue:#5ea2ff;--cream:#ead9b3;--err:#f0857f;--topbar:rgba(14,22,34,.92);
+  }
+  .themebtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;width:32px;height:30px;cursor:pointer;font-size:14px;line-height:1}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;
+    line-height:1.55;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--border)}
+  .brand{font-weight:600;display:flex;align-items:center;gap:9px}
+  .brandmark{display:inline-flex;color:var(--blue)}.brandmark svg{display:block}
+  .brand small{color:var(--faint);font:400 12px var(--mono)}
+  .presets{display:flex;gap:6px;margin-left:10px}
+  .preset{background:var(--panel2);border:1px solid var(--border);color:var(--muted);font:600 12px var(--sans);
+    padding:5px 13px;border-radius:20px;cursor:pointer}
+  .preset.on{color:var(--text);border-color:color-mix(in srgb,var(--blue) 55%,var(--border))}
+  .gear{margin-left:auto;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:6px 12px;cursor:pointer;font:13px var(--sans)}
+  .modepill{font:11px var(--mono);color:var(--warn)}
+
+  main{flex:1;min-height:0;display:flex;flex-direction:column;max-width:840px;width:100%;margin:0 auto}
+  .transcript{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+  .hero{margin:auto;text-align:center;max-width:540px;color:var(--muted)}
+  .hero h1{color:var(--text);font-size:24px;margin:0 0 10px}
+  .hero .walls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;font:11px var(--mono);color:var(--faint)}
+  .hero .walls span{border:1px solid var(--border);border-radius:20px;padding:3px 10px}
+
+  .msg{display:flex;gap:12px}
+  .msg .who{width:30px;height:30px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;font:600 11px var(--mono);border:1px solid var(--border)}
+  .msg.user .who{background:var(--panel2);color:var(--cloud)}
+  .msg.bot .who{background:color-mix(in srgb,var(--judge) 20%,var(--panel2));color:var(--judge);
+    border-color:color-mix(in srgb,var(--judge) 35%,var(--border))}
+  .bubble{min-width:0;flex:1}
+  .bubble .tag{font:11px var(--mono);color:var(--judge);margin-bottom:5px}
+  .bubble .body{white-space:pre-wrap;word-wrap:break-word}
+  .panel-toggle{margin-top:10px;font:12px var(--sans);color:var(--muted);background:var(--panel);
+    border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer;display:inline-block}
+  .panel-detail{margin-top:10px;display:none;gap:10px;grid-template-columns:1fr}
+  .panel-detail.show{display:grid}
+  @media(min-width:680px){.panel-detail.show{grid-template-columns:repeat(3,1fr)}}
+  .pcol{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:11px;font-size:12.5px}
+  .pcol h4{margin:0 0 6px;font:600 11px var(--mono);color:var(--cloud);display:flex;justify-content:space-between}
+  .pcol .b{white-space:pre-wrap;color:var(--muted)}
+  .synthing{color:var(--judge);font:12px var(--mono);display:inline-flex;align-items:center;gap:7px}
+  .synthing .s{width:11px;height:11px;border:2px solid color-mix(in srgb,var(--judge) 35%,transparent);
+    border-top-color:var(--judge);border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .composer{display:flex;gap:10px;align-items:flex-end;padding:14px 20px 20px;border-top:1px solid var(--border)}
+  .composer textarea{flex:1;resize:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:12px 14px;color:var(--text);font:14px var(--sans);max-height:180px;line-height:1.5}
+  .composer textarea:focus{outline:none;border-color:var(--muted)}
+  .composer button{width:40px;height:40px;border-radius:10px;border:0;cursor:pointer;background:var(--blue);
+    color:var(--bg);font-size:18px;font-weight:700;flex-shrink:0}
+
+  .banner{margin:0 20px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:13px 16px}
+  .banner p{margin:0 0 10px;font-size:13px} .banner .ctas{display:flex;gap:9px;flex-wrap:wrap}
+  .banner button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;
+    padding:7px 13px;cursor:pointer;font:13px var(--sans)}
+  code{font:12px var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;color:var(--muted)}
+
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:20}
+  .sheet.show{display:flex}
+  .sheet .box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;
+    width:min(560px,92vw);max-height:88vh;overflow-y:auto}
+  .sheet h3{margin:0 0 4px} .sheet .sub{color:var(--faint);font-size:12px;margin-bottom:16px}
+  .sheet section{margin-bottom:18px} .sheet label{display:block;font:12px var(--mono);color:var(--muted);margin-bottom:5px}
+  .layers{display:flex;gap:8px;flex-wrap:wrap}
+  .layer{background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:8px;
+    padding:7px 12px;cursor:pointer;font:13px var(--sans)}
+  .layer.on{color:var(--text);border-color:color-mix(in srgb,var(--accent) 50%,var(--border))}
+  .sheet input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;
+    color:var(--text);font:12px var(--mono);margin-bottom:8px}
+  .sheet .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .fp{font:12px var(--mono);color:var(--accent)} .note{color:var(--faint);font-size:11.5px;margin-top:6px}
+  .sheet .close{float:right;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:7px;padding:4px 11px;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"><span class="brandmark" aria-hidden="true"><svg viewBox="0 0 64 64" width="22" height="22" fill="currentColor"><g stroke="currentColor" stroke-width="3.4" stroke-linecap="round" opacity=".34" fill="none"><line x1="32" y1="32" x2="32" y2="13"/><line x1="32" y1="32" x2="15" y2="49"/><line x1="32" y1="32" x2="49" y2="49"/></g><circle cx="32" cy="13" r="6"/><circle cx="15" cy="49" r="6"/><circle cx="49" cy="49" r="6"/><circle cx="32" cy="32" r="11"/></svg></span> Caucus <small>· the prose half</small></div>
+    <div class="presets" id="presets">
+      <span class="preset on" data-preset="quality">Quality</span>
+      <span class="preset" data-preset="budget">Budget</span>
+      <span class="preset" data-preset="custom">Custom</span>
+    </div>
+    <button class="gear" id="gear">⚙ Settings <span class="modepill" id="modepill">· recorded</span></button>
+    <button class="themebtn" id="themebtn" title="Toggle light / dark" aria-label="Toggle theme">☾</button>
+  </div>
+
+  <main>
+    <div class="transcript" id="transcript">
+      <div class="hero" id="hero">
+        <h1>Chat with a synth</h1>
+        <p>A panel of models answers your question in parallel; a judge synthesizes them into one. This is
+          Caucus's <b>front door</b> — prose only, in the browser, against the cloud. The coding half —
+          turn-aware synth that proves edits against your repo — runs locally in front of your agent.</p>
+        <div class="walls"><span>prose only</span><span>browser only</span><span>cloud only</span></div>
+      </div>
+    </div>
+    <div class="banner" id="banner">
+      <p id="bannerText">You're seeing a <b>recorded</b> synth. Paste an OpenRouter key in Settings to chat live —
+        then see why the coding half has to run locally.</p>
+      <div class="ctas">
+        <button onclick="window.open('https://github.com/NakliTechie/caucus','_blank')">Deploy for yourself · <code>pipx install caucus</code></button>
+        <button onclick="window.open('https://github.com/NakliTechie/caucus#readme','_blank')">Read the docs →</button>
+      </div>
+    </div>
+    <form class="composer" id="composer">
+      <textarea id="input" rows="1" placeholder="Ask anything…  (Enter to send)">What's the best way to add caching to a REST API?</textarea>
+      <button type="submit" aria-label="Send">↑</button>
+    </form>
+  </main>
+
+  <div class="sheet" id="sheet">
+    <div class="box">
+      <button class="close" id="close">close</button>
+      <h3>Settings</h3>
+      <div class="sub">Caucus's demo is a single static file — a client, not a proxy. It never calls a backend and never touches local Ollama.</div>
+      <section>
+        <label>Layer</label>
+        <div class="layers" id="layers">
+          <span class="layer on" data-layer="canned">▶ Recorded run</span>
+          <span class="layer" data-layer="shared">🎁 Shared free key</span>
+          <span class="layer" data-layer="byok">🔑 Your OpenRouter key</span>
+        </div>
+        <div class="note" id="layernote">A recorded real run — zero keys, bulletproof. What every first-time visitor sees.</div>
+      </section>
+      <section id="byoksec" style="display:none">
+        <label>OpenRouter API key (browser-only — never leaves this page except to OpenRouter)</label>
+        <input id="key" type="password" placeholder="sk-or-..." autocomplete="off">
+        <div class="row"><label style="margin:0"><input type="checkbox" id="persist"> remember on this device</label>
+          <span class="fp" id="keyfp"></span>
+          <button class="close" id="forget" style="display:none;float:none">forget</button></div>
+      </section>
+      <section>
+        <label>Panel (comma-separated OpenRouter models) — used by Custom + live layers</label>
+        <input id="panel" type="text" value="openai/gpt-4o-mini, anthropic/claude-3.5-haiku, google/gemini-flash-1.5">
+        <label>Judge</label>
+        <input id="judge" type="text" value="openai/gpt-4o-mini">
+      </section>
+    </div>
+  </div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const OPENROUTER="https://openrouter.ai/api/v1/chat/completions";
+let layer="canned", preset="quality";
+
+// Layer 2 — shared free key, funded at DEPLOY time (public by design). Empty here → explains + falls back.
+const SHARED_KEY="", SHARED_CAP=40, SHARED_USES="caucus_demo_shared_uses";
+const sharedLeft=()=>Math.max(0,SHARED_CAP-(+localStorage.getItem(SHARED_USES)||0));
+const spendShared=()=>localStorage.setItem(SHARED_USES,String((+localStorage.getItem(SHARED_USES)||0)+1));
+
+// Preset panels (Quality vs Budget); Custom reads the Settings inputs.
+const PRESETS={
+  quality:{panel:["openai/gpt-4o","anthropic/claude-3.5-sonnet","google/gemini-pro-1.5"],judge:"anthropic/claude-3.5-sonnet"},
+  budget:{panel:["openai/gpt-4o-mini","anthropic/claude-3.5-haiku","google/gemini-flash-1.5"],judge:"openai/gpt-4o-mini"},
+};
+function combo(){ if(preset==="custom") return {panel:$("panel").value.split(",").map(s=>s.trim()).filter(Boolean),judge:$("judge").value.trim()}; return PRESETS[preset]; }
+
+const CANNED={
+  panel:[
+    {model:"openai/gpt-4o",text:"Start at the HTTP layer: set explicit Cache-Control (max-age, s-maxage, stale-while-revalidate) and ETag/Last-Modified on cacheable GETs, then put a CDN or reverse proxy (Varnish, Cloudflare) in front so public reads never touch your app. Mark anything user-specific as private or no-store."},
+    {model:"anthropic/claude-3.5-sonnet",text:"For expensive computed responses, use an application cache (Redis) with the cache-aside pattern: look up, miss → compute → store with a TTL. The hard part is invalidation — tie cache keys to the entities they derive from and bust them on write. Keep TTLs short for volatile data, longer for stable reads."},
+    {model:"google/gemini-pro-1.5",text:"Decide what to cache before how: profile for read-heavy, recomputed-often endpoints. Design cache keys that include all inputs that change the output (path, query, auth scope). Protect against thundering-herd with a lock or request coalescing so a cold key doesn't trigger N simultaneous recomputes."}
+  ],
+  judge:"Layer your caching rather than picking one:\n\n1. HTTP + CDN for public GETs — Cache-Control (s-maxage, stale-while-revalidate) + ETags, fronted by a CDN/reverse proxy so reads never hit your app. Mark user-specific responses private/no-store.\n2. Application cache-aside (Redis) for expensive computed responses — look up → on miss compute and store with a TTL. Make invalidation first-class: key by the entities a response derives from and bust on write; short TTLs for volatile data.\n3. Operational guards — cache keys must include every input that changes the output (path, query, auth scope); add request coalescing / a lock to prevent stampedes on cold keys.\n\nTrade-off: aggressive TTLs maximise hit-rate but risk staleness — start conservative and lengthen where correctness allows."
+};
+
+// ---- chat plumbing ----
+function addUser(text){ $("hero")?.remove();
+  $("transcript").insertAdjacentHTML("beforeend",
+    `<div class="msg user"><div class="who">you</div><div class="bubble"><div class="body">${esc(text)}</div></div></div>`);
+  scroll(); }
+function addBot(){ const id="b"+Date.now();
+  $("transcript").insertAdjacentHTML("beforeend",
+    `<div class="msg bot" id="${id}"><div class="who">synth</div><div class="bubble">
+      <div class="tag" id="${id}-tag"><span class="synthing"><span class="s"></span>panel answering…</span></div>
+      <div class="body" id="${id}-body"></div>
+      <button class="panel-toggle" id="${id}-pt" style="display:none">▾ show the 3 model answers</button>
+      <div class="panel-detail" id="${id}-pd"></div></div></div>`);
+  scroll(); return id; }
+function scroll(){ const t=$("transcript"); t.scrollTop=t.scrollHeight; }
+
+// in-memory key cache: holds the BYOK key for the session (loaded from IndexedDB on start if remembered)
+let memKey="";
+function currentKey(){ if(layer==="byok") return $("key").value.trim()||memKey||"";
+  if(layer==="shared") return SHARED_KEY; return ""; }
+
+async function streamModel(key,model,q,onDelta){
+  const r=await fetch(OPENROUTER,{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json",
+    "HTTP-Referer":location.origin,"X-Title":"Caucus demo"},
+    body:JSON.stringify({model,messages:[{role:"user",content:q}],stream:true})});
+  if(!r.ok) throw new Error(r.status===402?"shared key drained":"HTTP "+r.status);
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",acc="";
+  for(;;){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+    let nl;while((nl=buf.indexOf("\n"))>=0){const line=buf.slice(0,nl).trim();buf=buf.slice(nl+1);
+      if(!line.startsWith("data:"))continue;const d=line.slice(5).trim();if(d==="[DONE]")continue;
+      try{const t=JSON.parse(d).choices?.[0]?.delta?.content||"";if(t){acc+=t;onDelta&&onDelta(acc);}}catch(_){}}}
+  return acc; }
+
+function renderPanel(id,panel){
+  $(id+"-pd").innerHTML=panel.map((p,i)=>`<div class="pcol"><h4><span>${esc(p.model)}</span><span id="${id}-s${i}">…</span></h4><div class="b" id="${id}-pb${i}">${esc(p.text||"")}</div></div>`).join("");
+  const pt=$(id+"-pt"); pt.style.display="inline-block";
+  pt.onclick=()=>{const pd=$(id+"-pd");pd.classList.toggle("show");pt.textContent=(pd.classList.contains("show")?"▴ hide":"▾ show")+" the model answers";};
+}
+function typeInto(el,text,done){let i=0;el.textContent="";(function step(){if(i>=text.length){done&&done();return;}el.textContent+=text.slice(i,i+4);i+=4;setTimeout(step,12);})();}
+
+async function synth(q){
+  const id=addBot();
+  if(layer==="canned"){
+    renderPanel(id,CANNED.panel.map(p=>({model:p.model,text:""})));
+    CANNED.panel.forEach((p,i)=>{$(id+"-s"+i).textContent="recorded";setTimeout(()=>typeInto($(id+"-pb"+i),p.text),150*i);});
+    $(id+"-tag").innerHTML='<span class="synthing"><span class="s"></span>judge synthesizing…</span>';
+    setTimeout(()=>{$(id+"-tag").textContent="✦ synthesized · recorded run";typeInto($(id+"-body"),CANNED.judge);setBanner("canned");},1200);
+    return;
+  }
+  const key=currentKey();
+  if(layer==="shared" && (!SHARED_KEY||sharedLeft()<=0)){ $(id+"-tag").textContent="";
+    $(id+"-body").innerHTML=`<span style="color:var(--warn)">${SHARED_KEY?"shared key drained (prepaid cap)":"no shared key is funded in this build"} — paste your own in ⚙ Settings, or watch the recording.</span>`;
+    layer="canned"; return synth(q).then(()=>{}); }
+  if(layer==="byok" && !key){ $(id+"-tag").textContent="";
+    $(id+"-body").innerHTML='<span style="color:var(--warn)">Paste an OpenRouter key in ⚙ Settings to chat live.</span>'; return; }
+  if(layer==="shared") spendShared();
+
+  const c=combo(); const panel=c.panel.map(m=>({model:m,text:""}));
+  renderPanel(id,panel);
+  let answers;
+  try{
+    answers=await Promise.all(c.panel.map((m,i)=>{$(id+"-s"+i).textContent="…";
+      return streamModel(key,m,q,acc=>{$(id+"-pb"+i).textContent=acc;}).then(a=>{$(id+"-s"+i).textContent="✓";return a;});}));
+  }catch(e){ $(id+"-tag").textContent="";
+    $(id+"-body").innerHTML=`<span style="color:var(--err)">${esc(e.message)}</span> — falling back to the recording.`;
+    layer="canned"; return synth(q); }
+  $(id+"-tag").innerHTML='<span class="synthing"><span class="s"></span>judge synthesizing…</span>';
+  const jp="You are the judge in a panel. Synthesize ONE best answer from the candidates — reconcile, resolve contradictions, cover gaps. Be concise.\n\nQuestion: "+q+"\n\n"+answers.map((a,i)=>`Candidate ${i+1} (${c.panel[i]}):\n${a}`).join("\n\n");
+  try{ await streamModel(key,c.judge,jp,acc=>{$(id+"-tag").textContent="✦ synthesized from "+c.panel.length+" models";$(id+"-body").textContent=acc;}); setBanner("byok"); }
+  catch(e){ $(id+"-tag").textContent="✦ synthesized"; }
+}
+
+// ---- BYOK persistence → IndexedDB ----
+// The BYOK key lives in IndexedDB (db 'caucus-demo', store 'keys', id 'openrouter') when 'remember
+// on this device' is ticked; otherwise it stays only in memory (memKey) for the session. No localStorage.
+const IDB_NAME="caucus-demo", IDB_STORE="keys", IDB_ID="openrouter";
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);
+  r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE);};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function idbSaveKey(k){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,"readwrite");
+  tx.objectStore(IDB_STORE).put(k,IDB_ID);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);})).catch(()=>{});}
+function idbGetKey(){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,"readonly");
+  const g=tx.objectStore(IDB_STORE).get(IDB_ID);g.onsuccess=()=>res(g.result||"");g.onerror=()=>rej(g.error);})).catch(()=>"");}
+function idbDeleteKey(){return idbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,"readwrite");
+  tx.objectStore(IDB_STORE).delete(IDB_ID);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);})).catch(()=>{});}
+
+const fp=k=>{if(!k)return"";let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))>>>0;return"fp:"+h.toString(16).slice(0,8);};
+function refreshKey(){const k=currentKey();$("keyfp").textContent=k&&layer==="byok"?fp(k):"";$("forget").style.display=k&&layer==="byok"?"":"none";}
+$("key").addEventListener("input",()=>{const k=$("key").value.trim();memKey=k;if($("persist").checked&&k)idbSaveKey(k);refreshKey();});
+$("persist").addEventListener("change",()=>{const k=$("key").value.trim();if($("persist").checked){if(k)idbSaveKey(k);}else{idbDeleteKey();}});
+$("forget").addEventListener("click",()=>{idbDeleteKey();memKey="";$("key").value="";$("persist").checked=false;refreshKey();});
+// On load: await the IndexedDB lookup so a remembered key rehydrates the field + memory.
+idbGetKey().then(k=>{if(k){memKey=k;$("key").value=k;$("persist").checked=true;refreshKey();}});
+
+// ---- UI wiring ----
+function setMode(){ $("modepill").textContent="· "+(layer==="canned"?"recorded":layer==="shared"?"shared key":"your key"); }
+function setBanner(ctx){ $("bannerText").innerHTML=ctx==="byok"
+  ? "That was the prose half — just API calls, which a browser can do. The coding half can't live here: a web page is a client, not a proxy, so it can't sit in front of your agent or sandbox-and-test edits against your repo. That runs locally: <code>pipx install caucus</code>."
+  : "You're seeing a <b>recorded</b> synth. Paste an OpenRouter key in Settings to chat live — then see why the coding half has to run locally."; }
+document.querySelectorAll(".preset").forEach(p=>p.addEventListener("click",()=>{preset=p.dataset.preset;
+  document.querySelectorAll(".preset").forEach(x=>x.classList.toggle("on",x===p));
+  if(preset==="custom"){$("sheet").classList.add("show");} }));
+document.querySelectorAll(".layer").forEach(l=>l.addEventListener("click",()=>{layer=l.dataset.layer;
+  document.querySelectorAll(".layer").forEach(x=>x.classList.toggle("on",x===l));
+  $("byoksec").style.display=layer==="byok"?"block":"none";
+  $("layernote").textContent=layer==="canned"?"A recorded real run — zero keys, bulletproof. What every first-time visitor sees."
+    :layer==="shared"?"OpenRouter, prepaid-capped, no auto-reload. Public-by-design key dropped in at deploy; empty here → falls back to the recording."
+    :"Your key → live synth. Tick to persist to this browser only (IndexedDB), never sent anywhere but OpenRouter.";
+  setMode(); refreshKey(); }));
+$("gear").addEventListener("click",()=>$("sheet").classList.add("show"));
+$("close").addEventListener("click",()=>$("sheet").classList.remove("show"));
+$("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))$("sheet").classList.remove("show");});
+
+function send(){const q=$("input").value.trim();if(!q)return;$("input").value="";autosize();addUser(q);synth(q);}
+$("composer").addEventListener("submit",e=>{e.preventDefault();send();});
+$("input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
+function autosize(){const i=$("input");i.style.height="auto";i.style.height=Math.min(180,i.scrollHeight)+"px";}
+$("input").addEventListener("input",autosize);
+setMode();
+
+// ---- theme (light cream default / dark navy) ----
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t);
+  try{localStorage.setItem("caucus-theme",t);}catch(_){}$("themebtn").textContent=t==="dark"?"☀":"☾";}
+let _th;try{_th=localStorage.getItem("caucus-theme");}catch(_){}
+applyTheme(_th||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+$("themebtn").addEventListener("click",()=>applyTheme(
+  document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"));
+</script>
+</body>
+</html>

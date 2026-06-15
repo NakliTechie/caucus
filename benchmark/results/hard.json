@@ -1,0 +1,96 @@
+{
+  "tasks": [
+    "calculate",
+    "valid_number",
+    "word_break",
+    "fraction_to_decimal",
+    "decode_string",
+    "basic_calculator_iii"
+  ],
+  "K": 5,
+  "N": 5,
+  "trials": 30,
+  "configs": [
+    "flash@1",
+    "pro@1",
+    "synth@3",
+    "runtest@2",
+    "runtest@3",
+    "runtest@5"
+  ],
+  "scores": {
+    "flash@1": {
+      "calculate": 3,
+      "valid_number": 4,
+      "word_break": 1,
+      "fraction_to_decimal": 5,
+      "decode_string": 4,
+      "basic_calculator_iii": 1
+    },
+    "pro@1": {
+      "calculate": 2,
+      "valid_number": 3,
+      "word_break": 0,
+      "fraction_to_decimal": 5,
+      "decode_string": 5,
+      "basic_calculator_iii": 1
+    },
+    "synth@3": {
+      "calculate": 1,
+      "valid_number": 1,
+      "word_break": 0,
+      "fraction_to_decimal": 0,
+      "decode_string": 5,
+      "basic_calculator_iii": 1
+    },
+    "runtest@2": {
+      "calculate": 4,
+      "valid_number": 5,
+      "word_break": 1,
+      "fraction_to_decimal": 5,
+      "decode_string": 5,
+      "basic_calculator_iii": 2
+    },
+    "runtest@3": {
+      "calculate": 4,
+      "valid_number": 5,
+      "word_break": 4,
+      "fraction_to_decimal": 5,
+      "decode_string": 5,
+      "basic_calculator_iii": 3
+    },
+    "runtest@5": {
+      "calculate": 5,
+      "valid_number": 5,
+      "word_break": 5,
+      "fraction_to_decimal": 5,
+      "decode_string": 5,
+      "basic_calculator_iii": 4
+    }
+  },
+  "summary": {
+    "flash@1": 18,
+    "pro@1": 16,
+    "synth@3": 8,
+    "runtest@2": 22,
+    "runtest@3": 26,
+    "runtest@5": 29
+  },
+  "summary_pct": {
+    "flash@1": 60,
+    "pro@1": 53,
+    "synth@3": 27,
+    "runtest@2": 73,
+    "runtest@3": 87,
+    "runtest@5": 97
+  },
+  "select_survivor_agreement": {
+    "ok": 30,
+    "total": 30
+  },
+  "sandbox": "SeatbeltSandbox",
+  "elapsed_s": 654.9,
+  "set": "hard",
+  "cheap": "deepseek/deepseek-v4-flash",
+  "strong": "deepseek/deepseek-v4-pro"
+}
